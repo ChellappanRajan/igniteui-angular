@@ -169,6 +169,9 @@ export class IgxPivotGridComponent extends IgxGridBaseDirective implements OnIni
      */
     public set pivotConfiguration(value: IPivotConfiguration) {
         this._pivotConfiguration = value;
+        if (!this._init) {
+            this.setupColumns();
+        }
         this.notifyChanges(true);
     }
 
@@ -788,7 +791,7 @@ export class IgxPivotGridComponent extends IgxGridBaseDirective implements OnIni
     }
 
     public get selectedRows(): any[] {
-        if (!this.selectionService.getSelectedRows()) {
+        if (this.selectionService.getSelectedRows().length === 0) {
             return [];
         }
         const selectedRowIds = [];
@@ -981,7 +984,7 @@ export class IgxPivotGridComponent extends IgxGridBaseDirective implements OnIni
     @Input()
     public set data(value: any[] | null) {
         this._data = value || [];
-        if (this.shouldGenerate) {
+        if (!this._init) {
             this.setupColumns();
             this.reflow();
         }
@@ -1824,6 +1827,7 @@ export class IgxPivotGridComponent extends IgxGridBaseDirective implements OnIni
         let fieldsMap;
         if (this.pivotConfiguration.columnStrategy && this.pivotConfiguration.columnStrategy instanceof NoopPivotDimensionsStrategy) {
             const fields = this.generateDataFields(data);
+            if (fields.length === 0) return;
             const rowFields = PivotUtil.flatten(this.pivotConfiguration.rows).map(x => x.memberName);
             const keyFields = Object.values(this.pivotKeys);
             const filteredFields = fields.filter(x => rowFields.indexOf(x) === -1 && keyFields.indexOf(x) === -1 &&
@@ -2027,13 +2031,6 @@ export class IgxPivotGridComponent extends IgxGridBaseDirective implements OnIni
             cols.push(ref.instance);
         });
         return cols;
-    }
-
-    /**
-    * @hidden @internal
-    */
-    public getPropName(dim: IPivotDimension) {
-        return !!dim ?? dim.memberName + this.pivotKeys.rowDimensionSeparator + 'height';
     }
 
     /**
